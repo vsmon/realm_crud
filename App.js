@@ -33,6 +33,14 @@ export default class App extends Component{
       }
     }
     authentication()
+
+    const repeat = ()=>{
+      setInterval(()=>{
+        this.syncFirebase()
+      }, 10000)
+    }
+
+    //repeat()
     
   }
   
@@ -52,6 +60,8 @@ export default class App extends Component{
     try {    
       if(this.state.uid != ''){
         const {pessoas} = this.state
+
+        await firebase.database().ref(this.state.uid).child('pessoas').remove()
 
         pessoas.map(async (pessoa) => {
           const key =  await firebase.database().ref(this.state.uid).child('pessoas').push()
@@ -151,8 +161,8 @@ export default class App extends Component{
           data={this.state.pessoas}
           renderItem={({item})=>{
             return(
-              <View style={{flex:1, margin:10, borderWidth:1, flexDirection:'row'}}>
-                <TouchableHighlight underlayColor='gray' style={{height:30,flex:1}} onPress={()=>alert(item.nome)}>
+              <View style={{margin:10, borderWidth:1, flexDirection:'row'}}>
+                <TouchableHighlight underlayColor='gray' style={{height:30}} onPress={()=>alert(item.nome)}>
                   <Text>ID: {item.id} Nome: {item.nome} Idade: {item.idade}</Text>                  
                 </TouchableHighlight>                
                 <TouchableHighlight onPress={()=>this.excluirItem(item.id)}>
