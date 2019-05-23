@@ -1,13 +1,15 @@
 import React, {Component} from 'react'
 import {TextInput, View, Text, Button, FlatList, TouchableHighlight} from 'react-native'
 import Realm from 'realm'
+import firebase from './firebaseConnection'
 
 export default class App extends Component{
 
   constructor(props){
     super(props)
     this.state = {
-      pessoas:[],      
+      pessoas:[],
+      uid:'',      
       nome:'',
       idade:'',
       pessoaSchema : {
@@ -20,6 +22,17 @@ export default class App extends Component{
       }
     }
 
+    const authentication = async() => {
+      try {
+        const user = await firebase.auth().signInWithEmailAndPassword('rodrigo@gmail.com', '123456')
+        if(user){
+          this.setState({...this.state, uid:firebase.auth().currentUser.uid})
+        }
+      } catch (error) {
+        alert(error.message)
+      }
+    }
+    authentication()
     
   }
   
@@ -35,6 +48,25 @@ export default class App extends Component{
     this.loadRealm()
   }
 
+  async syncFirebase(){
+    try {    
+      if(this.state.uid != ''){
+        const {pessoas} = this.state
+
+        pessoas.map(async (pessoa) => {
+          const key =  await firebase.database().ref(this.state.uid).child('pessoas').push()
+          await key.set({
+            id:pessoa.id,
+            nome:pessoa.nome,
+            idade:pessoa.idade,
+          })
+        })        
+      }
+    } catch (error) {
+      alert(error.message)
+    }
+  }
+
   async salvarRealm(){
     try {
       const realm = await Realm.open({schema:[this.state.pessoaSchema]})          
@@ -45,6 +77,7 @@ export default class App extends Component{
           idade: this.state.idade,
         })
       })
+      this.syncFirebase()
 
     } catch (error) {
       alert(error.message)
@@ -124,10 +157,10 @@ export default class App extends Component{
                 </TouchableHighlight>                
                 <TouchableHighlight onPress={()=>this.excluirItem(item.id)}>
                   <Text style={{fontSize:25, color:'red'}}>X</Text>
-                </TouchableHighlight>
-                
+                </TouchableHighlight>                
               </View>            
             )            
+            
           }}
           keyExtractor={(item)=>item.id.toString()}
         />
